@@ -9,10 +9,10 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/gorilla/mux"
 )
 
+//Block is struct which contains all data
 type Block struct {
 	Index     int
 	Timestamp string
@@ -21,8 +21,10 @@ type Block struct {
 	PrevHash  string
 }
 
+//Blockchain contains blocks
 var Blockchain []Block
 
+//generateHash generating hash for new blocks
 func generateHash(block Block) string {
 	create := string(block.Index) + block.Timestamp + string(block.Money) + block.PrevHash
 	h := sha256.New()
@@ -31,14 +33,13 @@ func generateHash(block Block) string {
 	return hex.EncodeToString(hashed)
 }
 
+//generateBlock generating new blocks
 func generateBlock(oldBlock Block, Money int) (Block, error) {
 
 	var newBlock Block
 
-	t := time.Now()
-
 	newBlock.Index = oldBlock.Index + 1
-	newBlock.Timestamp = t.String()
+	newBlock.Timestamp = time.Now().String()
 	newBlock.Money = Money
 	newBlock.PrevHash = oldBlock.Hash
 	newBlock.Hash = generateHash(newBlock)
@@ -46,6 +47,7 @@ func generateBlock(oldBlock Block, Money int) (Block, error) {
 	return newBlock, nil
 }
 
+//isBlockValid checking if block is valid
 func isBlockValid(newBlock, oldBlock Block) bool {
 	if oldBlock.Index+1 != newBlock.Index || oldBlock.Hash != newBlock.PrevHash || generateHash(newBlock) != newBlock.Hash {
 		return false
@@ -53,12 +55,14 @@ func isBlockValid(newBlock, oldBlock Block) bool {
 	return true
 }
 
+//replaceChain replace chain if it longer than blockchain
 func replaceChain(newBlocks []Block) {
 	if len(newBlocks) > len(Blockchain) {
 		Blockchain = newBlocks
 	}
 }
 
+//handleGetBlockchain sending json data with blockchain information
 func handleGetBlockchain(w http.ResponseWriter, r *http.Request) {
 	bytes, err := json.MarshalIndent(Blockchain, "", " ")
 	if err != nil {
@@ -68,10 +72,12 @@ func handleGetBlockchain(w http.ResponseWriter, r *http.Request) {
 	io.WriteString(w, string(bytes))
 }
 
+//Message contains data from user
 type Message struct {
 	Money int
 }
 
+//respondWithJSON sending json data to browser
 func respondWithJSON(w http.ResponseWriter, r *http.Request, code int, payload interface{}) {
 	response, err := json.MarshalIndent(payload, "", " ")
 	if err != nil {
@@ -83,6 +89,7 @@ func respondWithJSON(w http.ResponseWriter, r *http.Request, code int, payload i
 	w.Write(response)
 }
 
+//handleWriteBlock handle request on create new block
 func handleWriteBlock(w http.ResponseWriter, r *http.Request) {
 
 	var m Message
@@ -102,18 +109,19 @@ func handleWriteBlock(w http.ResponseWriter, r *http.Request) {
 	if isBlockValid(newBlock, Blockchain[len(Blockchain)-1]) {
 		newBlockchain := append(Blockchain, newBlock)
 		replaceChain(newBlockchain)
-		spew.Dump(Blockchain)
 	}
 	respondWithJSON(w, r, http.StatusCreated, newBlock)
 }
 
+//makeMuxRouter create routes
 func makeMuxRouter() http.Handler {
 	muxRouter := mux.NewRouter()
-	muxRouter.HandleFunc("/", handleGetBlockchain).Methods("GET")
-	muxRouter.HandleFunc("/", handleWriteBlock).Methods("POST")
+	muxRouter.HandleFunc("/json", handleGetBlockchain).Methods("GET")
+	muxRouter.HandleFunc("/json", handleWriteBlock).Methods("POST")
 	return muxRouter
 }
 
+//run start server
 func run() error {
 	mux := makeMuxRouter()
 	httpAddr := "8080"
@@ -129,12 +137,19 @@ func run() error {
 }
 
 func main() {
+
 	go func() {
-		t := time.Now()
-		genesisBlock := Block{0, t.String(), 0, "", ""}
-		spew.Dump(genesisBlock)
+
+		//create template for genesis block
+		template := Block{0, time.Now().String(), 0, "", ""}
+
+		//create genesis block
+		genesisBlock := Block{0, time.Now().String(), 0, generateHash(template), ""}
+
+		//append genesis block to blockchain
 		Blockchain = append(Blockchain, genesisBlock)
 	}()
 
-	log.Fatal(run())
+	//start server
+	run()
 }
