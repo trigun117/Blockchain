@@ -116,8 +116,8 @@ func handleWriteBlock(w http.ResponseWriter, r *http.Request) {
 //makeMuxRouter create routes
 func makeMuxRouter() http.Handler {
 	muxRouter := mux.NewRouter()
-	muxRouter.HandleFunc("/json", handleGetBlockchain).Methods("GET")
-	muxRouter.HandleFunc("/json", handleWriteBlock).Methods("POST")
+	muxRouter.HandleFunc("/", handleGetBlockchain).Methods("GET")
+	muxRouter.HandleFunc("/", handleWriteBlock).Methods("POST")
 	return muxRouter
 }
 
