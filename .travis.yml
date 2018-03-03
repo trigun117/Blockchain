@@ -4,7 +4,7 @@ go:
   - "1.10"
 
 script:
-  - go build
+  - CGO_ENABLED=0 go build
   - docker build --rm -t trigun117/bc .
   - docker login -u $DOCKER_USER -p $DOCKER_PASS
   - docker push trigun117/bc
