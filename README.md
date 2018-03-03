@@ -4,7 +4,7 @@ Blockchain written on Go
 
 ## Getting Started
 ### Docker Hub
-https://hub.docker.com/r/trigun117/load_generator/
+https://hub.docker.com/r/trigun117/bc/
 ### Run blockchain
 ```
 go run blockchain.go
